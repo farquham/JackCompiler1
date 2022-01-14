@@ -136,7 +136,11 @@ class Tokenizer:
 
     # Returns the character which is the current token
     def symbol(self):
-        return self.token
+        symd = {"<":"&lt",">":"&gt","&":"&amp"}
+        if (self.token in ["<",">","&"]):
+            return symd[self.token]
+        else:
+            return self.token
 
     # Returns the indentifier which is the current token
     def indentifier(self):
@@ -174,7 +178,7 @@ class CompEngine:
         self.newfile.write("<"+(self.tokens[self.count][1])+"> " + (self.tokens[self.count][0]) + " </"+(self.tokens[self.count][1])+">\n")
         self.count += 1
         while ((self.count) < (len(self.tokens)-1)):
-            print(self.tokens[self.count][0] + self.tokens[self.count][1] +  str(self.count))
+            #print(self.tokens[self.count][0] + self.tokens[self.count][1] +  str(self.count))
             if (self.tokens[self.count][0] in ["static","field"]):
                 self.compileClassVarDec()
             if (self.tokens[self.count][0] in ["function","method","constructor"]):
@@ -202,19 +206,17 @@ class CompEngine:
         self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
         self.count += 1
         while (self.tokens[self.count][1] != "symbol"):
-            print(self.tokens[self.count][0] + "," + self.tokens[self.count][1] + "," + str(self.count))
+            #print(self.tokens[self.count][0] + "," + self.tokens[self.count][1] + "," + str(self.count))
             self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
             self.count += 1
         if (self.tokens[self.count][0] == "("):
-            print("(")
             self.compileParameterList()
         if (self.tokens[self.count][0] == "{"):
-            print("{")
             self.compileSubroutineBody()
         self.newfile.write("</subroutineDec>\n")
         return
 
-    # Compiles a (maybe empty) paramter list (ignores enclosing ()) !!!!
+    # Compiles a (maybe empty) paramter list (ignores enclosing ())
     def compileParameterList(self):
         self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
         self.count += 1
@@ -296,7 +298,8 @@ class CompEngine:
     # Compiles an if statement (matbe with trailing else)
     def compileIf(self):
         self.newfile.write("<ifStatement>\n")
-        while (self.tokens[(self.count)-1][0] != "}") or (self.tokens[self.count][0] == "if"):
+        src = 0
+        while ((self.tokens[(self.count)-1][0] != "}") or (self.tokens[self.count][0] == "if")) and (src < 1):
             if (self.tokens[self.count][0] != ("(" or "{")):
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
@@ -308,6 +311,7 @@ class CompEngine:
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
                 self.compileStatements()
+                src += 1
         if (self.tokens[self.count][0] == "else"):
             while (self.tokens[(self.count)-1][0] != "}"):
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
@@ -319,16 +323,24 @@ class CompEngine:
         self.newfile.write("</ifStatement>\n")
         return
 
-    # Compiles a while statement !!!!!!
+    # Compiles a while statement
     def compileWhile(self):
         self.newfile.write("<whileStatement>\n")
         src = 0
-        while ((self.tokens[(self.count)-1][0] != ";") or (self.tokens[(self.count)][0] == "while")) and (src < 1):
-             self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
-             self.count += 1
-             # !!!
-
-             src += 1
+        while ((self.tokens[(self.count)-1][0] != "}") or (self.tokens[(self.count)][0] == "while")) and (src < 1):
+             if (self.tokens[self.count][0] != ("(" or "{")):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+             elif (self.tokens[self.count][0] == "("):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.compileExpression()
+                print("while check")
+             if (self.tokens[self.count][0] == "{"):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.compileStatements()
+                src += 1
         self.newfile.write("</whileStatement>\n")
         return
 
@@ -371,24 +383,34 @@ class CompEngine:
         return
 
     # Compiles a term (will likelu need to lookahead 1 token to distinguish
-    # between possiblilities !!!!!!
+    # between possiblilities
     def compileTerm(self):
         self.newfile.write("<term>\n")
-        if (self.tokens[(self.count)-1][0] == "["):
-            self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
-            self.count += 1
-            #!!!
-        elif (self.tokens[(self.count)+1][0] == "("):
-            self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
-            self.count += 1
-            #!!!
-        elif (self.tokens[(self.count)+1][0] == "."):
-            self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
-            self.count += 1
-            #!!!
-        else:
-            self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
-            self.count += 1
+        while (self.tokens[(self.count)][0] != ";"):
+            print(self.tokens[self.count][0])
+            if (self.tokens[(self.count)+1][0] == "[") and (self.tokens[(self.count)][1] == "identifier"):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.compileExpression()
+                break
+            elif (self.tokens[(self.count)+1][0] == "(") and (self.tokens[(self.count)][1] == "identifier"):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.compileExpressionList()
+                print("Term check")
+                break
+            elif (self.tokens[(self.count)+1][0] == ".") and (self.tokens[(self.count)][1] == "identifier"):
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
+            else:
+                self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
+                self.count += 1
         self.newfile.write("</term>\n")
         return
 
@@ -396,13 +418,13 @@ class CompEngine:
     def compileExpressionList(self):
         self.newfile.write("<expressionList>\n")
         while (self.tokens[(self.count)-1][0] != ")"):
-            if (self.tokens[self.count][1] in ["identifier","keyword"]):
+            print(str(self.count))
+            if (self.tokens[(self.count)][1] in ["identifier","keyword"]):
                 self.compileExpression()
             else:
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
         self.newfile.write("</expressionList>\n")
-
         self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
         self.count += 1
         return
