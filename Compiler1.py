@@ -386,7 +386,7 @@ class CompEngine:
     # between possiblilities
     def compileTerm(self):
         self.newfile.write("<term>\n")
-        while (self.tokens[(self.count)][0] != ";"):
+        while ((self.tokens[(self.count)][0] != ";") and (self.tokens[self.count][0] != ")")):
             print(self.tokens[self.count][0])
             if (self.tokens[(self.count)+1][0] == "[") and (self.tokens[(self.count)][1] == "identifier"):
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
@@ -418,7 +418,6 @@ class CompEngine:
     def compileExpressionList(self):
         self.newfile.write("<expressionList>\n")
         while (self.tokens[(self.count)-1][0] != ")"):
-            print(str(self.count))
             if (self.tokens[(self.count)][1] in ["identifier","keyword"]):
                 self.compileExpression()
             else:
