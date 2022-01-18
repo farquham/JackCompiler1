@@ -25,11 +25,11 @@ def main():
     else:
         tokens.append([(str(main_helper(t.tokenType(),t))).strip(), TT.lower()])
 
-    #tfilename = ((jfile.split(".")[0]) +"TC.xml")
-    #tfiles = open(tfilename, "w")
-    #for x in range(0,len(tokens)):
-    #    tfiles.write(str(tokens[x][0]) + " " + tokens[x][1] + "\n")
-    #tfiles.close()
+    tfilename = ((jfile.split(".")[0]) +"TC.xml")
+    tfiles = open(tfilename, "w")
+    for x in range(0,len(tokens)):
+        tfiles.write(str(tokens[x][0]) + " " + tokens[x][1] + "\n")
+    tfiles.close()
 
     c = CompEngine(sys.argv[1],tokens)
     c.compileClass()
@@ -68,14 +68,14 @@ class Tokenizer:
         file.close()
         self.lcounter = 0
         self.line = (self.lines)[self.lcounter]
-        self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)", self.line)))
+        self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)", self.line)))
         self.tcounter = 0
         #print(self.line)
         #print("initstart")
         while ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "/")) or ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "**")):
             self.lcounter += 1
             self.line = (self.lines)[self.lcounter]
-            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)", self.line)))
+            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)", self.line)))
             self.tcounter = 0
             #print(self.line)
             #print("initloop")
@@ -99,18 +99,21 @@ class Tokenizer:
             ((self.line[(self.tcounter)] == "/") and (self.line[(self.tcounter)+1] == "/")) or
             ((self.token == "/") and (self.line[(self.tcounter)+1] == "**")) or
             (re.match(r"\/\w+",self.token)) or
-            ((self.token == "*") and (self.line[(self.tcounter)+1] == "/"))):
+            ((self.token == "*") and (self.line[(self.tcounter)+1] == "/")) or
+            (self.line[0] == "*")):
             #print("tokentest1")
             self.lcounter += 1
             self.line = (self.lines)[self.lcounter]
-            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)",self.line)))
+            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)",self.line)))
             #print(self.line)
             #print("advancetest1")
             self.tcounter = 0
-            while ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "/")) or ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "**")):
+            while (((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "/")) or
+                   ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "**")) or
+                   (self.line[0] == "*")):
                 self.lcounter += 1
                 self.line = (self.lines)[self.lcounter]
-                self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)", self.line)))
+                self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)", self.line)))
                 self.tcounter = 0
                 #print(self.line)
                 #print("advancetest1loop")
@@ -130,14 +133,16 @@ class Tokenizer:
         if (self.tcounter == (len(self.line)-1)):
             self.lcounter += 1
             self.line = (self.lines)[self.lcounter]
-            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)",self.line)))
+            self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)",self.line)))
             #print(self.line)
             #print("advancetest2")
             self.tcounter = 0
-            while ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "/")) or ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "**")):
+            while (((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "/")) or
+                   ((((self.line)[self.tcounter]) == "/") and (((self.line)[(self.tcounter)+1]) == "**")) or
+                   (self.line[0] == "*")):
                 self.lcounter += 1
                 self.line = (self.lines)[self.lcounter]
-                self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-)", self.line)))
+                self.line = list(filter(filtfunc, re.split(r"(\;|\,|\.|[ ]|\[|\]|\(|\)|\n|\/|\t|\"|\-|\~)", self.line)))
                 self.tcounter = 0
                 #print(self.line)
                 #print("advancetest2loop")
@@ -446,7 +451,7 @@ class CompEngine:
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
                 self.compileTerm()
-            if (self.tokens[self.count][0] in ["-","("]):
+            if (self.tokens[self.count][0] == "(") or ((self.tokens[self.count][0] in ["-","~"]) and (self.tokens[(self.count)-1][0] == "(")):
                 self.compileTerm()
             if (self.tokens[self.count][0] in [";",")","]",","]):
                 break
@@ -484,7 +489,7 @@ class CompEngine:
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
                 break
-            elif ((self.tokens[self.count][0] == "(") and (self.tokens[(self.count)+1][0] == "-")) or ((self.tokens[self.count][0] == "(") and (self.tokens[(self.count)+1][1] == "identifier")):
+            elif ((self.tokens[self.count][0] == "(") and ((self.tokens[(self.count)+1][0] in ["-","~"]))) or ((self.tokens[self.count][0] == "(") and (self.tokens[(self.count)+1][1] == "identifier")):
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
                 self.compileExpression()
@@ -494,7 +499,7 @@ class CompEngine:
                 self.count += 1
                 self.compileExpression()
                 break
-            elif (self.tokens[self.count][0] == "-"):
+            elif (self.tokens[self.count][0] in ["~","-"]):
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
                 self.count += 1
                 self.compileTerm()
@@ -514,7 +519,7 @@ class CompEngine:
     def compileExpressionList(self):
         self.newfile.write("<expressionList>\n")
         while (self.tokens[(self.count)-1][0] != ")"):
-            if (self.tokens[(self.count)][1] != "symbol"):
+            if (self.tokens[(self.count)][1] != "symbol") or (self.tokens[(self.count)][0] == "("):
                 self.compileExpression()
             else:
                 self.newfile.write("<"+self.tokens[self.count][1]+"> " + self.tokens[self.count][0] + " </"+self.tokens[self.count][1]+">\n")
